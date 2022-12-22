@@ -9,8 +9,9 @@
 
 #include <sys/wait.h>
 
-#include "cd.c"
-#include "echo.c"
+#include "sicd.h"
+#include "siecho.h"
+#include "siexit.h"
 
 void
 sig_int(int signo) {
@@ -49,13 +50,18 @@ int main(int argc, char** argv) {
 		perror("Signal error");
 		exit(1);
 	}
-    while(strncmp(input, "exit", 4) != 0) {
+    while(true) {
         if (!cflag) {
             printf("-> ");
             input = fgets(input, BUFSIZ, stdin);
             input[strlen(input) - 1] = '\0';
-            if (strncmp(input, "cd", strlen("cd"))) {
-                cd(strtok(input, " "));
+            if (strncmp(input, "exit", strlen("exit")) == 0) {
+                siexit();
+            }
+            if (strncmp(input, "cd", strlen("cd")) == 0) {
+                char* dir = strtok(input, " ");
+                dir = strtok(NULL, " ");
+                sicd(dir);
                 continue;
             }
         }
@@ -66,9 +72,12 @@ int main(int argc, char** argv) {
         /* Child process*/
         else if (pid == 0) {
             char* args[BUFSIZ];
-            puts(input);
             char* command = strtok(input, " ");
             char* argument = strtok(NULL, " ");
+            if (strncmp(command, "echo", strlen("echo")) == 0) {
+                siecho(argument);
+                continue;
+            }
             execlp(command, command, argument, (char*)NULL);
             perror("Child could not execute properly");
             exit(EX_UNAVAILABLE);
@@ -81,5 +90,6 @@ int main(int argc, char** argv) {
             continue;
         }
     }
+    siexit();
     return 0;
 }
