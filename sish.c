@@ -9,6 +9,9 @@
 
 #include <sys/wait.h>
 
+#include "cd.c"
+#include "echo.c"
+
 void
 sig_int(int signo) {
 	perror("Caught sigint somehow");
@@ -51,6 +54,10 @@ int main(int argc, char** argv) {
             printf("-> ");
             input = fgets(input, BUFSIZ, stdin);
             input[strlen(input) - 1] = '\0';
+            if (strncmp(input, "cd", strlen("cd"))) {
+                cd(strtok(input, " "));
+                continue;
+            }
         }
         if ((pid = fork()) == -1) {
             perror("Could not fork");
